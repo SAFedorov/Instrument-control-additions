@@ -88,12 +88,11 @@ classdef MyPdhFit < MyFit
             p_in(2) = (min_loc+max_loc)/2;
             
             % Modulation frequency
-            ysqint = cumsum(y-mean(y)).^2;
-            [~,~,int_peak_width,~] = findpeaks(ysqint,x,'SortStr','descend','NPeaks',1);
-            p_in(4) = 3*int_peak_width;
+            ind = (y-mean(y)).^2 > 0.2*max((y-mean(y)).^2);
+            p_in(4) = (max(x(ind))-min(x(ind)))/2;
             
             % Resonance width
-            p_in(3) = p_in(4)/2;
+            p_in(3) = abs(min_loc-max_loc)/2;
             
             % Offset
             p_in(5) = mean(y);
