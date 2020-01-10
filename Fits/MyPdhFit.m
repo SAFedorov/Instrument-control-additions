@@ -58,20 +58,23 @@ classdef MyPdhFit < MyFit
             this.lim_lower = [-Inf,-Inf,0,-Inf,-Inf,-pi];
 
             %Finds peaks on the positive signal (max 1 peak)
+            rng_x = max(x)-min(x);
             try
                 [max_val,max_loc,max_width,max_prom] = findpeaks(y,x,...
-                    'MinPeakDistance',range(x)/2,'SortStr','descend',...
+                    'MinPeakDistance',rng_x/2,'SortStr','descend',...
                     'NPeaks',1);
-            catch
+            catch ME
+                warning(ME.message)
                 max_prom = 0;
             end
 
             %Finds peaks on the negative signal (max 1 peak)
             try
                 [min_val,min_loc,min_width,min_prom] = findpeaks(-y,x,...
-                    'MinPeakDistance',range(x)/2,'SortStr','descend',...
+                    'MinPeakDistance',rng_x/2,'SortStr','descend',...
                     'NPeaks',1);
-            catch
+            catch ME
+                warning(ME.message)
                 min_prom = 0;
             end
 
