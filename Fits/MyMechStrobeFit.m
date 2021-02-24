@@ -6,6 +6,7 @@ classdef MyMechStrobeFit < MyMechExponentialFit
     
     properties (GetAccess = public, SetAccess = protected)
         TdCursor  MyCursor
+        h_sel_data
     end
     
     methods (Access = public)
@@ -45,8 +46,10 @@ classdef MyMechStrobeFit < MyMechExponentialFit
         
         function createUserParamList(this)
             createUserParamList@MyMechExponentialFit(this)
-            addUserParam(this,'ltime', 'title', 'Lock Interval (s)',...
-                'editable', 'on', 'default', 0.25);
+            addUserParam(this,'ltime_start', 'title', 'Exclusion Interval Gate On (s)',...
+                'editable', 'on', 'default', 0.5);
+            addUserParam(this,'ltime_end', 'title', 'Exclusion Interval Gate Off (s)',...
+                'editable', 'on', 'default', 0.1);
         end
         
         %Re-define the data selection, including the threshold for
@@ -54,11 +57,17 @@ classdef MyMechStrobeFit < MyMechExponentialFit
                 
         function ind = findDataSelection(this)
             
-            if ~isempty(this.ltime)
-                lock_time=this.ltime;
+            if ~isempty(this.ltime_end)
+                lock_time_end=this.ltime_end;
             else
-                lock_time=0.25;
-            end                
+                lock_time_end=0.1;
+            end       
+            
+            if ~isempty(this.ltime_start)
+                lock_time_start=this.ltime_start;
+            else
+                lock_time_start=0.5;
+            end
             
             if ~isempty(this.TdCursor)
                 ymin=this.TdCursor.value;
@@ -80,14 +89,14 @@ classdef MyMechStrobeFit < MyMechExponentialFit
 
             %Offset transition times by lock time         
             
-            strobe_on_times=this.Data.x(ind_temp==1)+lock_time;
-            strobe_off_times=this.Data.x(ind_temp==-1)-lock_time;            
+            strobe_on_times=this.Data.x(ind_temp==1)+lock_time_start;
+            strobe_off_times=this.Data.x(ind_temp==-1)-lock_time_end;            
             
             %Handle the case in which no transitions are found
             
             if ~any(ind_temp)
                 if numel(strobe_on_times)==0
-                    strobe_on_times=this.Data.x(1)+lock_time;
+                    strobe_on_times=this.Data.x(1)+lock_time_start;
                 end
                 if numel(strobe_off_times)==0
                     strobe_off_times=this.Data.x(end);
@@ -99,7 +108,8 @@ classdef MyMechStrobeFit < MyMechExponentialFit
                 
                 if numel(strobe_off_times) >=1 && numel(strobe_on_times) >=1
                     if strobe_off_times(1) < strobe_on_times(1)
-                    strobe_on_times=[this.Data.x(1)+lock_time;strobe_on_times];
+                    strobe_on_times=...
+                        [this.Data.x(1)+lock_time_start;strobe_on_times];
                     end
                 end
                 if numel(strobe_on_times) == numel(strobe_off_times)+1
