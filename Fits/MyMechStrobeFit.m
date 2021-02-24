@@ -6,29 +6,29 @@ classdef MyMechStrobeFit < MyMechExponentialFit
     
     properties (GetAccess = public, SetAccess = protected)
         TdCursor  MyCursor
-        h_sel_data
+        SelData   MyTrace
+        sel_color='r';
     end
     
     methods (Access = public)
         function this = MyMechStrobeFit(varargin)
-            
-                this@MyMechExponentialFit(varargin{:})
+            this@MyMechExponentialFit(varargin{:})
+           
+            if ~isempty(this.Axes)
                 
-                if ~isempty(this.Axes)
-
-                    %Add a horizontal cursor to set the threshold for strobe
-                    %gates
-                    ylim = this.Axes.YLim;
-                    pos = ylim(1)*((ylim(2)/ylim(1))^0.4);
-
-                    this.TdCursor = MyCursor(this.Axes, ...
+                %Add a horizontal cursor to set the threshold for strobe
+                %gates
+                ylim = this.Axes.YLim;
+                pos = ylim(1)*((ylim(2)/ylim(1))^0.4);
+                
+                this.TdCursor = MyCursor(this.Axes, ...
                     'orientation',  'horizontal', ...
                     'position',     pos, ...
                     'Label',        'Dark threshold', ...
                     'Color',        [0.6, 0, 0]);
-                end
+            end
                 
-            
+
         end
         
         %Include deletion of horizontal cursor when window is shut down
@@ -37,6 +37,12 @@ classdef MyMechStrobeFit < MyMechExponentialFit
             delete@MyExponentialFit(this);
             if ~isempty(this.TdCursor)
                 delete(this.TdCursor);
+            end
+            
+            if ismethod(this.SelData, 'delete')
+                %Deletes the selected data trace, such that the plot is
+                %removed from the DAQ when finished
+                delete(this.SelData)
             end
         end    
         
@@ -50,6 +56,13 @@ classdef MyMechStrobeFit < MyMechExponentialFit
                 'editable', 'on', 'default', 0.5);
             addUserParam(this,'ltime_end', 'title', 'Exclusion Interval Gate Off (s)',...
                 'editable', 'on', 'default', 0.1);
+            
+            %Initiates selected data trace
+            this.SelData = MyTrace( ...
+                'name_x',   this.Data.name_x, ...
+                'unit_x',   this.Data.unit_x, ...
+                'name_y',   this.Data.name_y, ...
+                'unit_y',   this.Data.unit_y);
         end
         
         %Re-define the data selection, including the threshold for
@@ -132,7 +145,24 @@ classdef MyMechStrobeFit < MyMechExponentialFit
                 xmax = max(this.RangeCursors.value);
                 ind = (this.Data.x>xmin & this.Data.x<xmax & ind);
             end
+            
+            this.SelData.x=this.Data.x(ind);
+            this.SelData.y=this.Data.y(ind);
+            
+            if this.enable_plot && ~isempty(this.SelData);
+                plotSelData(this);
+            end
         end     
+        
+        %Plots the trace contained in the SelData MyTrace object
+        function plotSelData(this, varargin)
+            plot(this.SelData, this.Axes, ...
+                'Color', this.sel_color, ...
+                'Marker','.',...
+                'LineStyle','none',...
+                'make_labels', false,...
+                varargin{:});
+        end
        
     end
     
